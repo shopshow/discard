@@ -9,14 +9,18 @@ module Discard
   module Model
     extend ActiveSupport::Concern
 
+    UNDISCARD_TIME = Time.utc(1970,01,01).freeze
+
     included do
       class_attribute :discard_column
-      self.discard_column = :discarded_at
+      self.discard_column = :deleted_at
 
       scope :kept, ->{ undiscarded }
-      scope :undiscarded, ->{ where(discard_column => nil) }
-      scope :discarded, ->{ where.not(discard_column => nil) }
+      scope :undiscarded, ->{ where(discard_column => UNDISCARD_TIME) }
+      scope :discarded, ->{ where.not(discard_column => UNDISCARD_TIME) }
       scope :with_discarded, ->{ unscope(where: discard_column) }
+
+      default_scope { undiscarded }
 
       define_model_callbacks :discard
       define_model_callbacks :undiscard
@@ -103,7 +107,7 @@ module Discard
 
     # @return [Boolean] true if this record has been discarded, otherwise false
     def discarded?
-      self[self.class.discard_column].present?
+      self[self.class.discard_column] && self[self.class.discard_column] > UNDISCARD_TIME
     end
 
     # @return [Boolean] false if this record has been discarded, otherwise true
@@ -140,7 +144,7 @@ module Discard
     def undiscard
       return unless discarded?
       run_callbacks(:undiscard) do
-        update_attribute(self.class.discard_column, nil)
+        update_attribute(self.class.discard_column, UNDISCARD_TIME)
       end
     end
 
