@@ -16,8 +16,8 @@ module Discard
       self.discard_column = :deleted_at
 
       scope :kept, ->{ undiscarded }
-      scope :undiscarded, ->{ where(discard_column => UNDISCARD_TIME) }
-      scope :discarded, ->{ where.not(discard_column => UNDISCARD_TIME) }
+      scope :undiscarded, ->{ with_discarded.where(discard_column => UNDISCARD_TIME) }
+      scope :discarded, ->{ with_discarded.where.not(discard_column => UNDISCARD_TIME) }
       scope :with_discarded, ->{ unscope(where: discard_column) }
 
       default_scope { undiscarded }
